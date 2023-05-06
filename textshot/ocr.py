@@ -6,7 +6,7 @@ from logger import log_ocr_error, print_error
 from notifications import notify
 from PyQt5 import QtCore
 from messages import ocr_error_message
-
+from preprocessing import *
 
 def ensure_tesseract_installed():
     try:
@@ -30,8 +30,14 @@ def get_ocr_result(img, lang=None):
     pil_img = Image.open(io.BytesIO(buffer.data()))
     buffer.close()
 
+    # image preprocessing
+    gray = get_grayscale(pil_img)
+    thresh = thresholding(gray)
+    opening = opening(gray)
+    canny = canny(gray)
+
     try:
-        return pytesseract.image_to_string(pil_img, timeout=5, lang=lang).strip()
+        return pytesseract.image_to_string(canny, timeout=5, lang=lang).strip()
     except RuntimeError as error:
         log_ocr_error(error)
         notify(ocr_error_message(error))
